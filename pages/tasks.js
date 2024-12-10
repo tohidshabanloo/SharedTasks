@@ -9,6 +9,10 @@ const ItemType = 'TASK';
 
 export default function Tasks() {
     const [tasks, setTasks] = useState({ all: [], inProgress: [], done: [] });
+    const [newTaskInput, setNewTaskInput] = useState(''); // Local state for new task input
+    const [taskToEdit, setTaskToEdit] = useState(null);  // Store task being edited
+    const [modalOpen, setModalOpen] = useState(false);  // Modal state for editing
+    const [isAddModal, setIsAddModal] = useState(false);  // State to distinguish Add vs Edit modal
     const router = useRouter();
 
     useEffect(() => {
@@ -39,6 +43,50 @@ export default function Tasks() {
         setTasks(updatedTasks);
     };
 
+    const addTask = (column) => {
+        if (newTaskInput.trim()) {
+            const newTaskObj = {
+                id: new Date().toISOString(), // Unique ID
+                name: newTaskInput.trim(),
+            };
+
+            const updatedTasks = { ...tasks };
+            updatedTasks[column].push(newTaskObj);
+            setTasks(updatedTasks);
+            setNewTaskInput('');  // Clear the input after adding the task
+            setModalOpen(false);  // Close modal after task is added
+        }
+    };
+
+    const editTask = (task, column) => {
+        setTaskToEdit({ ...task, column });  // Set task to edit with the column information
+        setModalOpen(true);  // Open the modal
+        setIsAddModal(false); // Set the modal as an edit modal
+    };
+
+    const saveEditedTask = () => {
+        if (taskToEdit && taskToEdit.name.trim()) {
+            const updatedTasks = { ...tasks };
+
+            // Update task in the correct column
+            updatedTasks[taskToEdit.column] = updatedTasks[taskToEdit.column].map((task) =>
+                task.id === taskToEdit.id ? { ...task, name: taskToEdit.name } : task
+            );
+
+            setTasks(updatedTasks);  // Set the updated tasks
+            setModalOpen(false);  // Close the modal
+            setTaskToEdit(null);  // Reset taskToEdit
+        } else {
+            console.error('Invalid task or task name.');
+        }
+    };
+
+    const deleteTask = (task, column) => {
+        const updatedTasks = { ...tasks };
+        updatedTasks[column] = updatedTasks[column].filter((t) => t.id !== task.id);
+        setTasks(updatedTasks);
+    };
+
     const DraggableTask = ({ task, column }) => {
         const [{ isDragging }, drag] = useDrag(() => ({
             type: ItemType,
@@ -63,7 +111,15 @@ export default function Tasks() {
                     direction: 'rtl', // Right-to-left for Farsi
                 }}
             >
-                {task.name} {/* Directly using Farsi task name */}
+                {task.name}
+                <div>
+                    <button onClick={() => editTask(task, column)} style={{ margin: '5px' }}>
+                        ویرایش
+                    </button>
+                    <button onClick={() => deleteTask(task, column)} style={{ margin: '5px' }}>
+                        حذف
+                    </button>
+                </div>
             </div>
         );
     };
@@ -96,6 +152,27 @@ export default function Tasks() {
                 <h3 style={{ textAlign: 'center', color: '#333', fontSize: '1.2rem' }}>
                     {children} {/* Using Farsi header text */}
                 </h3>
+                <button
+                    onClick={() => {
+                        setIsAddModal(true);  // Open the add task modal
+                        setModalOpen(true);  // Open the modal
+                    }}
+                    style={{
+                        display: 'block',
+                        width: '100%',
+                        padding: '10px',
+                        backgroundColor: '#4CAF50',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        marginBottom: '10px',
+                    }}
+                >
+                    اضافه کردن کار
+                </button>
+                {tasks[column].map((task) => (
+                    <DraggableTask key={task.id} task={task} column={column} />
+                ))}
             </div>
         );
     };
@@ -116,27 +193,96 @@ export default function Tasks() {
                 <DropZone column="all" onDrop={moveTask}>
                     {/* Farsi header for All Tasks */}
                     تمام کارها
-                    {tasks.all.map((task) => (
-                        <DraggableTask key={task.id} task={task} column="all" />
-                    ))}
                 </DropZone>
 
                 <DropZone column="inProgress" onDrop={moveTask}>
                     {/* Farsi header for In Progress */}
                     در حال انجام
-                    {tasks.inProgress.map((task) => (
-                        <DraggableTask key={task.id} task={task} column="inProgress" />
-                    ))}
                 </DropZone>
 
                 <DropZone column="done" onDrop={moveTask}>
                     {/* Farsi header for Done */}
                     انجام شده
-                    {tasks.done.map((task) => (
-                        <DraggableTask key={task.id} task={task} column="done" />
-                    ))}
                 </DropZone>
             </div>
+
+            {/* Modal for adding/editing task */}
+            {modalOpen && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: '0',
+                        left: '0',
+                        width: '100%',
+                        height: '100%',
+                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                    }}
+                >
+                    <div
+                        style={{
+                            backgroundColor: '#fff',
+                            padding: '20px',
+                            borderRadius: '8px',
+                            width: '400px',
+                            textAlign: 'center',
+                        }}
+                    >
+                        <h3>{isAddModal ? 'اضافه کردن کار' : 'ویرایش کار'}</h3>
+                        <input
+                            type="text"
+                            value={isAddModal ? newTaskInput : taskToEdit?.name}
+                            onChange={(e) => {
+                                if (isAddModal) {
+                                    setNewTaskInput(e.target.value);  // For Add Task modal
+                                } else {
+                                    setTaskToEdit({ ...taskToEdit, name: e.target.value });  // For Edit Task modal
+                                }
+                            }}
+                            style={{
+                                width: '100%',
+                                padding: '10px',
+                                marginBottom: '20px',
+                                borderRadius: '4px',
+                                border: '1px solid #ddd',
+                            }}
+                        />
+                        <button
+                            onClick={() => {
+                                if (isAddModal) {
+                                    addTask('all');  // Add to 'all' column
+                                } else {
+                                    saveEditedTask();  // Save the edited task
+                                }
+                            }}
+                            style={{
+                                padding: '10px 20px',
+                                backgroundColor: '#4CAF50',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                            }}
+                        >
+                            {isAddModal ? 'اضافه کردن' : 'ذخیره'}
+                        </button>
+                        <button
+                            onClick={() => setModalOpen(false)}
+                            style={{
+                                padding: '10px 20px',
+                                backgroundColor: '#f44336',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                marginLeft: '10px',
+                            }}
+                        >
+                            بستن
+                        </button>
+                    </div>
+                </div>
+            )}
         </DndProvider>
     );
 }
