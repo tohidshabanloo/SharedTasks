@@ -1,199 +1,110 @@
-import React, { useState, useEffect } from "react";
-import { useDropzone } from "react-dropzone"; // Import react-dropzone
-import "./App.css";
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import { useDrag, useDrop } from 'react-dnd';
+import axios from 'axios';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 
-const App = () => {
-    const [tasks, setTasks] = useState([]);
-    const [editTaskId, setEditTaskId] = useState(null);
-    const [editTaskTitle, setEditTaskTitle] = useState("");
-    const [newTaskTitle, setNewTaskTitle] = useState("");
+const ItemType = 'TASK';
 
-    // Fetch tasks from the server
-    const fetchTasks = () => {
-        fetch("http://localhost:5000/tasks")
-            .then((res) => {
-                if (!res.ok) throw new Error("Failed to fetch tasks");
-                return res.json();
-            })
-            .then((data) => setTasks(data))
-            .catch((err) => console.error("Error fetching tasks:", err));
-    };
+export default function Tasks() {
+    const [tasks, setTasks] = useState({ all: [], inProgress: [], done: [] });
+    const router = useRouter();
 
     useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            router.push('/login');
+        }
+    }, [router]);
+
+    useEffect(() => {
+        const fetchTasks = async () => {
+            try {
+                const response = await axios.get('/api/tasks');
+                setTasks(response.data);
+            } catch (error) {
+                console.error('Error fetching tasks:', error);
+            }
+        };
         fetchTasks();
     }, []);
 
-    const handleEdit = (id, title) => {
-        setEditTaskId(id);
-        setEditTaskTitle(title);
-    };
-
-    const handleAddTask = () => {
-        fetch("http://localhost:5000/tasks", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                title: newTaskTitle,
-                status: "all", // Default status
-            }),
-        })
-            .then((res) => res.json())
-            .then(() => {
-                setNewTaskTitle("");
-                fetchTasks(); // Re-fetch tasks to update state
-            })
-            .catch((err) => console.error("Error adding task:", err));
-    };
-
-    const saveEditTask = (id) => {
-        fetch(`http://localhost:5000/tasks/${id}`, {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ title: editTaskTitle }),
-        })
-            .then((res) => res.json())
-            .then(() => {
-                setEditTaskId(null);
-                fetchTasks(); // Re-fetch tasks to update state
-            })
-            .catch((err) => console.error("Error editing task:", err));
-    };
-
-    const onDrop = (acceptedFiles, status) => {
-        // Handle dropping task (you can use the acceptedFiles to update the task status or do any other action)
-        const updatedTasks = [...tasks];
-        const draggedTaskIndex = updatedTasks.findIndex(
-            (task) => task.status === status
+    const moveTask = (task, sourceColumn, targetColumn) => {
+        const updatedTasks = { ...tasks };
+        updatedTasks[sourceColumn] = updatedTasks[sourceColumn].filter(
+            (t) => t.id !== task.id
         );
-
-        // Example: Update task status when dropped
-        if (draggedTaskIndex >= 0) {
-            updatedTasks[draggedTaskIndex].status = status;
-            setTasks(updatedTasks);
-
-            // Update task on the server
-            fetch(
-                `http://localhost:5000/tasks/${updatedTasks[draggedTaskIndex].id}`,
-                {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        ...updatedTasks[draggedTaskIndex],
-                    }),
-                }
-            ).catch((err) => console.error("Error updating task on drag:", err));
-        }
+        updatedTasks[targetColumn].push(task);
+        setTasks(updatedTasks);
     };
 
-    const handleDelete = (id) => {
-        fetch(`http://localhost:5000/tasks/${id}`, {
-            method: "DELETE",
-        })
-            .then(() => {
-                fetchTasks(); // Re-fetch tasks to update state
-            })
-            .catch((err) => console.error("Error deleting task:", err));
+    const DraggableTask = ({ task, column }) => {
+        const [{ isDragging }, drag] = useDrag(() => ({
+            type: ItemType,
+            item: { task, sourceColumn: column },
+            collect: (monitor) => ({
+                isDragging: monitor.isDragging(),
+            }),
+        }));
+
+        return (
+            <div ref={drag} style={{ opacity: isDragging ? 0.5 : 1 }}>
+                {task.name}
+            </div>
+        );
     };
 
-    // Prepare dropzone handlers for each column
-    const dropzoneHandlers = {
-        all: useDropzone({ onDrop: (acceptedFiles) => onDrop(acceptedFiles, "all") }),
-        "in-progress": useDropzone({ onDrop: (acceptedFiles) => onDrop(acceptedFiles, "in-progress") }),
-        done: useDropzone({ onDrop: (acceptedFiles) => onDrop(acceptedFiles, "done") }),
+    const DropZone = ({ children, column, onDrop }) => {
+        const [{ isOver }, drop] = useDrop({
+            accept: ItemType,
+            drop: (item) => {
+                onDrop(item.task, item.sourceColumn, column);
+            },
+            collect: (monitor) => ({
+                isOver: monitor.isOver(),
+            }),
+        });
+
+        return (
+            <div
+                ref={drop}
+                style={{
+                    flex: 1,
+                    padding: '10px',
+                    backgroundColor: isOver ? '#e0e0e0' : 'transparent',
+                    minHeight: '300px',
+                }}
+            >
+                <h3>{children}</h3>
+            </div>
+        );
     };
 
     return (
-        <div className="board">
-            {/* Column for "All" Tasks */}
-            <div
-                key="all"
-                className="column"
-                style={{ border: "1px solid #ccc", padding: "10px", margin: "10px" }}
-            >
-                <h3>ALL</h3>
+        <DndProvider backend={HTML5Backend}>
+            <div style={{ display: 'flex' }}>
+                <DropZone column="all" onDrop={moveTask}>
+                    All Tasks
+                    {tasks.all.map((task) => (
+                        <DraggableTask key={task.id} task={task} column="all" />
+                    ))}
+                </DropZone>
 
-                {/* Dropzone for all tasks */}
-                <div {...dropzoneHandlers.all.getRootProps()}>
-                    {/* Render tasks */}
-                    {tasks
-                        .filter((task) => task.status === "all")
-                        .map((task) => (
-                            <div key={task.id} className="task">
-                                {editTaskId === task.id ? (
-                                    <>
-                                        <input
-                                            type="text"
-                                            value={editTaskTitle}
-                                            onChange={(e) => setEditTaskTitle(e.target.value)}
-                                        />
-                                        <button onClick={() => saveEditTask(task.id)}>Save</button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <p>{task.title}</p>
-                                        <button onClick={() => handleEdit(task.id, task.title)}>Edit</button>
-                                    </>
-                                )}
-                                <button onClick={() => handleDelete(task.id)}>Delete</button>
-                            </div>
-                        ))}
-                </div>
+                <DropZone column="inProgress" onDrop={moveTask}>
+                    In Progress
+                    {tasks.inProgress.map((task) => (
+                        <DraggableTask key={task.id} task={task} column="inProgress" />
+                    ))}
+                </DropZone>
 
-                {/* Add Task Input */}
-                <div className="add-task">
-                    <input
-                        type="text"
-                        placeholder="New Task Title"
-                        value={newTaskTitle}
-                        onChange={(e) => setNewTaskTitle(e.target.value)}
-                    />
-                    <button onClick={handleAddTask}>Add Task</button>
-                </div>
+                <DropZone column="done" onDrop={moveTask}>
+                    Done
+                    {tasks.done.map((task) => (
+                        <DraggableTask key={task.id} task={task} column="done" />
+                    ))}
+                </DropZone>
             </div>
-
-            {/* Other columns (In Progress, Done) */}
-            {["in-progress", "done"].map((status) => (
-                <div
-                    key={status}
-                    className="column"
-                    style={{ border: "1px solid #ccc", padding: "10px", margin: "10px" }}
-                >
-                    <h3>{status.toUpperCase()}</h3>
-
-                    {/* Dropzone */}
-                    <div {...dropzoneHandlers[status].getRootProps()}>
-                        {/* Render tasks */}
-                        {tasks
-                            .filter((task) => task.status === status)
-                            .map((task) => (
-                                <div key={task.id} className="task">
-                                    {editTaskId === task.id ? (
-                                        <>
-                                            <input
-                                                type="text"
-                                                value={editTaskTitle}
-                                                onChange={(e) => setEditTaskTitle(e.target.value)}
-                                            />
-                                            <button onClick={() => saveEditTask(task.id)}>Save</button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <p>{task.title}</p>
-                                            <button onClick={() => handleEdit(task.id, task.title)}>Edit</button>
-                                        </>
-                                    )}
-                                    <button onClick={() => handleDelete(task.id)}>Delete</button>
-                                </div>
-                            ))}
-                    </div>
-                </div>
-            ))}
-        </div>
+        </DndProvider>
     );
-};
-
-export default App;
+}
