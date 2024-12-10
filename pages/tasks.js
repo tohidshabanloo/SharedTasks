@@ -49,8 +49,21 @@ export default function Tasks() {
         }));
 
         return (
-            <div ref={drag} style={{ opacity: isDragging ? 0.5 : 1 }}>
-                {task.name}
+            <div
+                ref={drag}
+                style={{
+                    opacity: isDragging ? 0.5 : 1,
+                    padding: '10px',
+                    marginBottom: '10px',
+                    backgroundColor: '#f4f4f4',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
+                    cursor: 'move',
+                    direction: 'rtl', // Right-to-left for Farsi
+                }}
+            >
+                {task.name} {/* Directly using Farsi task name */}
             </div>
         );
     };
@@ -71,35 +84,54 @@ export default function Tasks() {
                 ref={drop}
                 style={{
                     flex: 1,
-                    padding: '10px',
-                    backgroundColor: isOver ? '#e0e0e0' : 'transparent',
+                    padding: '20px',
+                    margin: '0 10px',
+                    backgroundColor: isOver ? '#e0e0e0' : '#fafafa',
                     minHeight: '300px',
+                    borderRadius: '8px',
+                    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+                    direction: 'rtl', // Right-to-left for Farsi
                 }}
             >
-                <h3>{children}</h3>
+                <h3 style={{ textAlign: 'center', color: '#333', fontSize: '1.2rem' }}>
+                    {children} {/* Using Farsi header text */}
+                </h3>
             </div>
         );
     };
 
     return (
         <DndProvider backend={HTML5Backend}>
-            <div style={{ display: 'flex' }}>
+            <div
+                style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    padding: '20px',
+                    backgroundColor: '#f7f7f7',
+                    minHeight: '100vh',
+                    fontFamily: 'Tahoma, Arial, sans-serif',
+                    direction: 'rtl', // Right-to-left for Farsi
+                }}
+            >
                 <DropZone column="all" onDrop={moveTask}>
-                    All Tasks
+                    {/* Farsi header for All Tasks */}
+                    تمام کارها
                     {tasks.all.map((task) => (
                         <DraggableTask key={task.id} task={task} column="all" />
                     ))}
                 </DropZone>
 
                 <DropZone column="inProgress" onDrop={moveTask}>
-                    In Progress
+                    {/* Farsi header for In Progress */}
+                    در حال انجام
                     {tasks.inProgress.map((task) => (
                         <DraggableTask key={task.id} task={task} column="inProgress" />
                     ))}
                 </DropZone>
 
                 <DropZone column="done" onDrop={moveTask}>
-                    Done
+                    {/* Farsi header for Done */}
+                    انجام شده
                     {tasks.done.map((task) => (
                         <DraggableTask key={task.id} task={task} column="done" />
                     ))}
