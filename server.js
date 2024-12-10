@@ -1,46 +1,55 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
+const express = require("express");
+const bodyParser = require("body-parser");
+const cors = require("cors");
 
+const fs = require("fs");
 const app = express();
-app.use(bodyParser.json());
 app.use(cors());
+app.use(bodyParser.json());
 
-// Simulate users and tasks in-memory
-const users = [
-    { username: 'user1', password: 'password1' },
-    { username: 'user2', password: 'password2' },
-];
+// Get all tasks
+let tasks = JSON.parse(fs.readFileSync("tasks.json"));
 
-let tasks = [
-    { id: '1', content: 'Task 1', status: 'all' },
-    { id: '2', content: 'Task 2', status: 'in-progress' },
-    { id: '3', content: 'Task 3', status: 'done' },
-];
-
-// Login route
-app.post('/api/login', (req, res) => {
-    const { username, password } = req.body;
-    const user = users.find((u) => u.username === username && u.password === password);
-    if (user) {
-        res.status(200).json({ success: true });
-    } else {
-        res.status(401).json({ success: false, message: 'Invalid credentials' });
-    }
-});
-
-// Fetch tasks
-app.get('/api/tasks', (req, res) => {
+app.get("/tasks", (req, res) => {
     res.json(tasks);
 });
 
-// Update tasks
-app.put('/api/tasks', (req, res) => {
-    tasks = req.body;
-    res.status(200).json({ success: true });
+// Add a task
+app.post("/tasks", (req, res) => {
+    const { title, status } = req.body;
+
+    const newTask = {
+        id: tasks.length + 1,
+        title,
+        status,
+    };
+
+    tasks.push(newTask);
+    fs.writeFileSync("tasks.json", JSON.stringify(tasks));
+    res.json({ message: "Task added successfully" });
+});
+
+
+// Edit a task
+app.put("/tasks/:id", (req, res) => {
+    const { id } = req.params;
+    const { title } = req.body;
+
+    tasks = tasks.map((task) =>
+        task.id === parseInt(id) ? { ...task, title } : task
+    );
+
+    fs.writeFileSync("tasks.json", JSON.stringify(tasks));
+    res.json({ message: "Task updated successfully" });
+});
+
+
+// Delete a task
+app.delete("/tasks/:id", (req, res) => {
+    const { id } = req.params;
+    tasks = tasks.filter((task) => task.id !== parseInt(id));
+    res.json({ message: "Task deleted successfully" });
 });
 
 const PORT = 5000;
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
