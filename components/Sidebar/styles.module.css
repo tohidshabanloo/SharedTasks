@@ -1,0 +1,251 @@
+.wrapper {
+  width: 300px;
+  min-width: 300px;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--lines-dark);
+  z-index: 1;
+  transition: transform ease-in 0.1s;
+}
+
+.hidden {
+  transform: translateX(-300px);
+}
+
+.hidden .showBtn {
+  transform: translateX(300px);
+}
+
+.logo {
+  padding: 32px 34px;
+}
+
+.title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--medium-grey);
+  margin: 20px 0 19px 32px;
+  letter-spacing: 2.4px;
+}
+
+.boards {
+  max-width: 92%;
+}
+
+.boards a,
+.btn {
+  display: block;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 14.5px 32px;
+  border: 0;
+  background: none;
+  color: var(--medium-grey);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 0px 100px 100px 0px;
+  gap: 16px;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.boards a span {
+  display: inline-block;
+  max-width: 210px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn {
+  color: var(--main-purple);
+}
+.btn svg path {
+  fill: var(--main-purple);
+}
+
+.boards a:hover {
+  background: var(--primary-hover);
+  color: var(--main-purple);
+}
+
+.boards a:hover svg path {
+  fill: var(--main-purple);
+}
+
+.boards a.active,
+.boards a.active:hover {
+  background: var(--main-purple);
+  color: #fff;
+}
+
+.boards a.active svg path,
+.boards a.active:hover svg path {
+  fill: #fff;
+}
+
+.bottomSection {
+  position: absolute;
+  bottom: 32px;
+  width: 100%;
+}
+
+.themeSwitcher {
+  width: calc(100% - 49px);
+  height: 48px;
+  margin: 0px 24px;
+  background: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  border-radius: 6px;
+}
+
+.hideBtn {
+  border: 0;
+  background: 0;
+  display: block;
+  width: calc(100% - 24px);
+  display: flex;
+  align-items: center;
+  padding: 14.5px 32px;
+  margin-top: 8px;
+  border: 0;
+  background: none;
+  color: var(--medium-grey);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 0px 100px 100px 0px;
+  gap: 16px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.hideBtn:hover {
+  background: var(--primary-hover);
+  color: var(--main-purple);
+}
+
+.hideBtn:hover svg path {
+  fill: var(--main-purple);
+}
+
+.showBtn {
+  height: 48px;
+  width: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: var(--main-purple);
+  border-radius: 0 100px 100px 0;
+  cursor: pointer;
+  position: fixed;
+  bottom: 32px;
+  left: 0;
+  z-index: 0;
+  animation: 0.2s ease-in fadeIn forwards;
+}
+
+.showBtn:hover {
+  background: var(--main-purple-hover);
+}
+
+.showBtn svg path {
+  fill: var(--white);
+}
+
+.toggleSwitch {
+  border: 0;
+  display: block;
+  width: 40px;
+  height: 20px;
+  background: var(--main-purple);
+  border-radius: 12px;
+  position: relative;
+  cursor: pointer;
+}
+
+.toggleSwitch::before {
+  content: "";
+  position: absolute;
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  background: var(--white);
+  border-radius: 50%;
+  top: 2.5px;
+  transform: translateX(-16px);
+  transition: transform ease-in 0.05s;
+}
+
+.light:before {
+  transform: translateX(-16px);
+}
+.dark:before {
+  transform: translateX(2px);
+}
+
+.skeleton {
+  opacity: 0.7;
+  animation: skeletonLoad 1s linear infinite alternate;
+}
+
+.skeletonText {
+  height: 1.1rem;
+  width: 100%;
+}
+
+@media (max-width: 782px) {
+  .wrapper {
+    width: 261px;
+    min-width: 261px;
+  }
+
+  .boards a,
+  .btn {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 685px) {
+  .wrapper {
+    display: none;
+  }
+
+  .boards a,
+  .btn {
+    padding: 14.5px 24px;
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes skeletonLoad {
+  0% {
+    background: hsl(200, 20%, 70%);
+  }
+  100% {
+    background: hsl(200, 20%, 95%);
+  }
+}
