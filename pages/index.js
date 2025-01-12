@@ -30,9 +30,11 @@ export default function KanbanBoard() {
 
   const moveTask = (taskId, fromColumn, toColumn) => {
     if (fromColumn === toColumn) return;
+  
     const updatedFrom = data.columns[fromColumn].filter((id) => id !== taskId);
     const updatedTo = [...data.columns[toColumn], taskId];
-
+  
+    // Update UI immediately
     setData({
       ...data,
       columns: {
@@ -41,7 +43,22 @@ export default function KanbanBoard() {
         [toColumn]: updatedTo,
       },
     });
+  
+    // Send the movement update to the backend
+    axios
+      .post("http://localhost:3001/api/tasks/move", {
+        taskId,
+        fromColumn,
+        toColumn,
+      })
+      .then(() => {
+        console.log("Task moved successfully");
+      })
+      .catch((error) => {
+        console.error("Error moving task:", error);
+      });
   };
+  
 
   const handleTaskAdded = (newTask) => {
     setData((prevData) => ({

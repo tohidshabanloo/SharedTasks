@@ -42,6 +42,23 @@ app.post("/api/tasks", (req, res) => {
   res.status(201).json({ message: "Task added successfully", task: newTask });
 });
 
+// POST endpoint to update task movement between columns
+app.post("/api/tasks/move", (req, res) => {
+    const { taskId, fromColumn, toColumn } = req.body;
+    const data = readTasks();
+  
+    // Remove task from the original column
+    data.columns[fromColumn] = data.columns[fromColumn].filter((id) => id !== taskId);
+  
+    // Add task to the new column
+    data.columns[toColumn].push(taskId);
+  
+    // Save the updated data
+    writeTasks(data);
+  
+    res.status(200).json({ message: "Task moved successfully" });
+  });
+
 // 🔒 LOGIN endpoint
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
