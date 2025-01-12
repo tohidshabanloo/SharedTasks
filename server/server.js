@@ -59,6 +59,42 @@ app.post("/api/tasks/move", (req, res) => {
     res.status(200).json({ message: "Task moved successfully" });
   });
 
+  // Edit Task
+app.put("/api/tasks/:id", (req, res) => {
+    const taskId = req.params.id;
+    const { name, assignedTo, status } = req.body;
+    const data = readTasks();
+  
+    const taskIndex = data.tasks.findIndex((task) => task.id === taskId);
+    if (taskIndex === -1) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+  
+    // Update task details
+    data.tasks[taskIndex] = { ...data.tasks[taskIndex], name, assignedTo, status };
+    writeTasks(data);
+  
+    res.status(200).json({ message: "Task updated successfully" });
+  });
+  
+  // Delete Task
+  app.delete("/api/tasks/:id", (req, res) => {
+    const taskId = req.params.id;
+    const data = readTasks();
+  
+    // Remove task from tasks array
+    data.tasks = data.tasks.filter((task) => task.id !== taskId);
+  
+    // Remove task ID from columns
+    Object.keys(data.columns).forEach((column) => {
+      data.columns[column] = data.columns[column].filter((id) => id !== taskId);
+    });
+  
+    writeTasks(data);
+    res.status(200).json({ message: "Task deleted successfully" });
+  });
+  
+
 // 🔒 LOGIN endpoint
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
