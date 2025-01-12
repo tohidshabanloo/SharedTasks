@@ -1,34 +1,41 @@
-// components/AddTaskModal.js
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 
 const AddTaskModal = ({ isOpen, onClose, onTaskAdded }) => {
     const [taskName, setTaskName] = useState("");
-    const [assignedTo, setAssignedTo] = useState("");
+    const [assignedTo, setAssignedTo] = useState([]);
+    const [users, setUsers] = useState([]);
+
+    useEffect(() => {
+        axios.get("http://localhost:3001/api/users")
+            .then((response) => setUsers(response.data))
+            .catch((error) => console.error("Error fetching users:", error));
+    }, []);
 
     const handleAddTask = async () => {
-        if (!taskName || !assignedTo) {
-            alert("Please fill in all fields.");
-            return;
+        if (!taskName || assignedTo.length === 0) {
+          alert("Please fill in all fields.");
+          return;
         }
-
+      
         const newTask = {
-            name: taskName,
-            assignedTo: assignedTo,
-            status: "Pending"
+          name: taskName,
+          assignedTo: Array.isArray(assignedTo) ? assignedTo : [assignedTo],
+          status: "Pending"
         };
-
+      
         try {
-            const response = await axios.post("http://localhost:3001/api/tasks", newTask);
-            onTaskAdded(response.data.task);
-            onClose();
-            setTaskName("");
-            setAssignedTo("");
+          const response = await axios.post("http://localhost:3001/api/tasks", newTask);
+          onTaskAdded(response.data.task);
+          onClose();
+          setTaskName("");
+          setAssignedTo([]);
         } catch (error) {
-            console.error("Error adding task:", error);
-            alert("Failed to add task.");
+          console.error("Error adding task:", error);
+          alert("Failed to add task.");
         }
-    };
+      };
+      
 
     if (!isOpen) return null;
 
@@ -45,13 +52,19 @@ const AddTaskModal = ({ isOpen, onClose, onTaskAdded }) => {
                     className="w-full border p-2 mb-3 rounded"
                 />
 
-                <input
-                    type="text"
-                    placeholder="Assign to"
+                <label className="block mb-2">Assign to:</label>
+                <select
+                    multiple
                     value={assignedTo}
-                    onChange={(e) => setAssignedTo(e.target.value)}
+                    onChange={(e) => setAssignedTo(Array.from(e.target.selectedOptions, option => option.value))}
                     className="w-full border p-2 mb-3 rounded"
-                />
+                >
+                    {users.map((user) => (
+                        <option key={user.username} value={user.username}>
+                            {user.displayName}
+                        </option>
+                    ))}
+                </select>
 
                 <div className="flex justify-end space-x-2">
                     <button

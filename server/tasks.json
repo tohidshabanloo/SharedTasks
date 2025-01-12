@@ -1,40 +1,36 @@
 {
   "tasks": [
     {
-      "id": "1736661937910",
-      "name": "4564",
-      "assignedTo": "6666",
-      "status": "To Do"
-    },
-    {
-      "id": "1736662021678",
-      "name": "----",
-      "assignedTo": "90980Tohid",
-      "status": "To Do"
-    },
-    {
       "id": "1736662226326",
       "name": "این یک تسک جدید است",
       "assignedTo": "علی رضا، توحید",
       "status": "To Do"
     },
     {
-      "id": "1736687646642",
-      "name": "546456",
-      "assignedTo": "4564565",
-      "status": "To Do"
+      "id": "1736689339417",
+      "name": "ghgh",
+      "assignedTo": [
+        "jane_smith"
+      ],
+      "status": "Pending"
+    },
+    {
+      "id": "1736689387580",
+      "name": "oooo",
+      "assignedTo": [
+        "jane_smith"
+      ],
+      "status": "Pending"
     }
   ],
   "columns": {
     "To Do": [
-      "1736662021678"
+      "1736689339417"
     ],
-    "inProgress": [
-      "1736662226326"
-    ],
+    "inProgress": [],
     "done": [
-      "1736661937910",
-      "1736687646642"
+      "1736662226326",
+      "1736689387580"
     ]
   }
 }

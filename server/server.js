@@ -9,9 +9,30 @@ app.use(express.json());
 
 // Dummy user data for login validation
 const users = [
-  { username: "admin", password: "admin123" },
-  { username: "user", password: "user123" }
-];
+    {
+      username: "john_doe",
+      password: "password123",
+      displayName: "John Doe",
+      photoUrl: "https://randomuser.me/api/portraits/men/1.jpg",
+    },
+    {
+      username: "jane_smith",
+      password: "securepass",
+      displayName: "Jane Smith",
+      photoUrl: "https://randomuser.me/api/portraits/women/2.jpg",
+    },
+    {
+      username: "alex_brown",
+      password: "mypassword",
+      displayName: "Alex Brown",
+      photoUrl: "https://randomuser.me/api/portraits/men/3.jpg",
+    },
+  ];
+
+  // Route to get users
+app.get("/api/users", (req, res) => {
+    res.json(users);
+  });
 
 // Read tasks from file
 const readTasks = () => {
@@ -32,16 +53,20 @@ app.get("/api/tasks", (req, res) => {
 
 // POST new task
 app.post("/api/tasks", (req, res) => {
-  const newTask = req.body;
-  const data = readTasks();
-
-  data.tasks.push(newTask);
-  data.columns["To Do"].push(newTask.id);
-
-  writeTasks(data);
-  res.status(201).json({ message: "Task added successfully", task: newTask });
-});
-
+    const { name, assignedTo, status } = req.body;
+    const newTask = {
+      id: Date.now().toString(),
+      name,
+      assignedTo: Array.isArray(assignedTo) ? assignedTo : [assignedTo],
+      status
+    };
+    const data = readTasks();
+data.tasks.push(newTask);
+data.columns["To Do"].push(newTask.id);
+writeTasks(data);
+res.json({ task: newTask });
+    res.json({ task: newTask });
+  });
 // POST endpoint to update task movement between columns
 app.post("/api/tasks/move", (req, res) => {
     const { taskId, fromColumn, toColumn } = req.body;
@@ -60,22 +85,28 @@ app.post("/api/tasks/move", (req, res) => {
   });
 
   // Edit Task
-app.put("/api/tasks/:id", (req, res) => {
-    const taskId = req.params.id;
+  app.put("/api/tasks/:id", (req, res) => {
+    const { id } = req.params;
     const { name, assignedTo, status } = req.body;
     const data = readTasks();
   
-    const taskIndex = data.tasks.findIndex((task) => task.id === taskId);
+    const taskIndex = data.tasks.findIndex((task) => task.id === id);
     if (taskIndex === -1) {
       return res.status(404).json({ message: "Task not found" });
     }
   
-    // Update task details
-    data.tasks[taskIndex] = { ...data.tasks[taskIndex], name, assignedTo, status };
-    writeTasks(data);
+    data.tasks[taskIndex] = {
+      ...data.tasks[taskIndex],
+      name,
+      assignedTo: Array.isArray(assignedTo) ? assignedTo : [assignedTo],
+      status,
+    };
   
-    res.status(200).json({ message: "Task updated successfully" });
+    writeTasks(data);
+    res.json({ task: data.tasks[taskIndex] });
   });
+  
+  
   
   // Delete Task
   app.delete("/api/tasks/:id", (req, res) => {

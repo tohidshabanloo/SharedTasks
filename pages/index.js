@@ -2,16 +2,21 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
+import AddTaskModal from "../components/AddTaskModal";
+import EditTaskModal from "../components/EditTaskModal";
 
 export default function KanbanBoard() {
   const [data, setData] = useState({ tasks: [], columns: { "To Do": [], "In Progress": [], "Done": [] } });
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
 
   useEffect(() => {
     fetchTasks();
+    fetchUsers();
   }, []);
 
   const fetchTasks = () => {
@@ -21,6 +26,14 @@ export default function KanbanBoard() {
         setLoading(false);
       })
       .catch((error) => console.error("Error fetching tasks:", error));
+  };
+
+  const fetchUsers = () => {
+    axios.get("http://localhost:3001/api/users")
+      .then((response) => {
+        setUsers(response.data);
+      })
+      .catch((error) => console.error("Error fetching users:", error));
   };
 
   const moveTask = (taskId, fromColumn, toColumn) => {
@@ -77,14 +90,23 @@ export default function KanbanBoard() {
           />
         ))}
       </div>
-      <button onClick={() => setIsModalOpen(true)} style={{ marginTop: "1rem" }}>+ Add Task</button>
+      <button onClick={() => setIsAddModalOpen(true)}>Add New Task</button>
 
-      {isModalOpen && <AddTaskModal onClose={() => setIsModalOpen(false)} onTaskAdded={handleTaskAdded} />}
+{isAddModalOpen && (
+  <AddTaskModal
+    isOpen={isAddModalOpen}
+    onClose={() => setIsAddModalOpen(false)}
+    onTaskAdded={handleTaskAdded}
+  />
+)}
+
+      {isModalOpen && <AddTaskModal onClose={() => setIsModalOpen(false)} onTaskAdded={handleTaskAdded} users={users} />}
       {isEditModalOpen && selectedTask && (
         <EditTaskModal
           task={selectedTask}
           onClose={() => setIsEditModalOpen(false)}
           onTaskUpdated={handleTaskUpdated}
+          users={users}
         />
       )}
     </DndProvider>
@@ -107,40 +129,14 @@ function Column({ name, tasks, moveTask, onEditTask, onDeleteTask }) {
 function Task({ task, column, onEditTask, onDeleteTask }) {
   const [, drag] = useDrag({ type: "TASK", item: { id: task.id, column } });
 
+  const assignedUsers = Array.isArray(task.assignedTo) ? task.assignedTo : [task.assignedTo];
+
   return (
     <div ref={drag} style={{ padding: "0.5rem", border: "1px solid gray", marginBottom: "0.5rem" }}>
       <p><strong>{task.name}</strong></p>
-      <p>Assigned to: {task.assignedTo}</p>
+      <p>Assigned to: {assignedUsers.filter(Boolean).join(", ")}</p>
       <button onClick={() => onEditTask(task)}>Edit</button>
       <button onClick={() => onDeleteTask(task.id)}>Delete</button>
-    </div>
-  );
-}
-
-function EditTaskModal({ task, onClose, onTaskUpdated }) {
-  const [taskName, setTaskName] = useState(task.name);
-  const [assignedTo, setAssignedTo] = useState(task.assignedTo);
-
-  const handleUpdateTask = () => {
-    const updatedTask = { ...task, name: taskName, assignedTo };
-
-    axios.put(`http://localhost:3001/api/tasks/${task.id}`, updatedTask)
-      .then(() => {
-        onTaskUpdated(updatedTask);
-        onClose();
-      })
-      .catch((error) => console.error("Error updating task:", error));
-  };
-
-  return (
-    <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center" }}>
-      <div style={{ backgroundColor: "white", padding: "2rem" }}>
-        <h2>Edit Task</h2>
-        <input value={taskName} onChange={(e) => setTaskName(e.target.value)} />
-        <input value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)} />
-        <button onClick={handleUpdateTask}>Update</button>
-        <button onClick={onClose}>Cancel</button>
-      </div>
     </div>
   );
 }
